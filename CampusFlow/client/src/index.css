@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #FFFFFF;
+    --color-surface: #F9FAFB;
+    --color-border: #E5E7EB;
+    --color-text: #111827;
+    --color-text-muted: #6B7280;
+    --color-primary: #3B82F6;
+    --color-primary-hover: #2563EB;
+    --color-success: #10B981;
+  }
+
+  .dark {
+    --color-bg: #09090B;          /* Zinc 950 */
+    --color-surface: #18181B;     /* Zinc 900 */
+    --color-border: #27272A;      /* Zinc 800 */
+    --color-text: #F8FAFC;        /* Slate 50 */
+    --color-text-muted: #A1A1AA;  /* Zinc 400 */
+    --color-primary: #3B82F6;
+    --color-primary-hover: #60A5FA;
+    --color-success: #10B981;
+  }
+
+  body {
+    @apply bg-brand-bg text-brand-text font-sans antialiased transition-colors duration-300;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-border rounded;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-brand-textMuted;
+}
