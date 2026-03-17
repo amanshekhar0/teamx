@@ -40,7 +40,7 @@ CampusFlow automates the entire process:
               ↓
         n8n Workflow
         ↙         ↘
- Twilio API     Google Calendar API
+     Twilio API     Google Calendar API
 
 (Notification) (Event Creation)
 
