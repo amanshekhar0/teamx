@@ -19,6 +19,24 @@ app.use(express.json());
 // Connect to Database
 connectDB();
 
+// --- Auth Middleware ---
+const auth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'Authentication required' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) throw new Error();
+
+    req.user = user;
+    req.isAdmin = user.email === 'amanshekar000@gmail.com';
+    next();
+  } catch (e) {
+    res.status(401).json({ error: 'Please authenticate.' });
+  }
+};
+
 // --- Routes ---
 
 // 0. Authentication Features
@@ -60,7 +78,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // 1. Registration Feature
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', auth, async (req, res) => {
   try {
     const { name, phone, email } = req.body;
 
@@ -73,11 +91,17 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Phone must be in E.164 format starting with +91 (e.g. +91XXXXXXXXXX)' });
     }
 
-    const newStudent = new Student({ name, phone, email });
-    await newStudent.save();
+    // Call n8n service first to get the message (optional, but good for logs)
+    const webhookResult = await n8nService.postToRegistrationWebhook({ name, phone });
 
-    // Call n8n webhook
-    const webhookResult = await n8nService.postToRegistrationWebhook(newStudent);
+    const newStudent = new Student({ 
+      name, 
+      phone, 
+      email, 
+      createdBy: req.user._id,
+      sent_message: `Welcome to CampusFlow, ${name}! Your account has been registered successfully.`
+    });
+    await newStudent.save();
 
     res.status(201).json({
       message: 'Student registered successfully',
@@ -91,7 +115,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 // 2. Deadline Management
-app.post('/api/deadline', async (req, res) => {
+app.post('/api/deadline', auth, async (req, res) => {
   try {
     const { title, dateTimeIso, associated_phone } = req.body;
 
@@ -99,11 +123,17 @@ app.post('/api/deadline', async (req, res) => {
       return res.status(400).json({ error: 'Title, dateTimeIso, and associated_phone are required.' });
     }
 
-    const newDeadline = new Deadline({ title, dateTimeIso, associated_phone });
-    await newDeadline.save();
+    // Get the AI enhanced message from n8nService if possible
+    const webhookResult = await n8nService.postToDeadlineWebhook({ title, dateTimeIso, associated_phone });
 
-    // Call n8n webhook
-    const webhookResult = await n8nService.postToDeadlineWebhook(newDeadline);
+    const newDeadline = new Deadline({ 
+      title, 
+      dateTimeIso, 
+      associated_phone, 
+      user: req.user._id,
+      sent_message: webhookResult.aiMessage || `Reminder: ${title} is coming up!`
+    });
+    await newDeadline.save();
 
     res.status(201).json({
       message: 'Deadline created successfully',
@@ -116,9 +146,13 @@ app.post('/api/deadline', async (req, res) => {
   }
 });
 
-app.get('/api/deadlines', async (req, res) => {
+app.get('/api/deadlines', auth, async (req, res) => {
   try {
-    const deadlines = await Deadline.find().sort({ dateTimeIso: 1 });
+    let query = { user: req.user._id };
+    if (req.isAdmin) {
+      query = {}; // Admin sees all
+    }
+    const deadlines = await Deadline.find(query).sort({ dateTimeIso: 1 });
     res.json(deadlines);
   } catch (error) {
     console.error('Fetch Deadlines Error:', error);
@@ -127,7 +161,7 @@ app.get('/api/deadlines', async (req, res) => {
 });
 
 // 3. AI Notice Broadcaster
-app.post('/api/notice', async (req, res) => {
+app.post('/api/notice', auth, async (req, res) => {
   try {
     const { raw_text } = req.body;
 
@@ -140,8 +174,8 @@ app.post('/api/notice', async (req, res) => {
     }
 
     // Call Groq API directly using the key in your .env
-    const axios = require('axios');
-    const groqResponse = await axios.post(
+    const axiosAuth = require('axios');
+    const groqResponse = await axiosAuth.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
         model: "llama-3.1-8b-instant",

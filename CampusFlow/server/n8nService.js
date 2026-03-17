@@ -90,10 +90,10 @@ const postToDeadlineWebhook = async (deadlineData) => {
   try {
     // Send it to the exact webhook defined
     const response = await axios.post(process.env.N8N_WEBHOOK_DEADLINE, payload);
-    return { success: true, data: response.data };
+    return { success: true, data: response.data, aiMessage };
   } catch (error) {
     console.error('Error sending to deadline webhook:', error.message);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, aiMessage };
   }
 };
 

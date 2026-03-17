@@ -13,10 +13,18 @@ const studentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  registeredAt: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  sent_message: {
+    type: String
+  }
 });
 
 module.exports = mongoose.model('Student', studentSchema);

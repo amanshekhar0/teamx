@@ -24,17 +24,22 @@ function RegisterPage() {
     }
 
     try {
-      // Mocking for bypass
-      // const res = await axios.post('http://localhost:5000/api/register', formData);
-      await new Promise(resolve => setTimeout(resolve, 600)); // fake delay
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:5000/api/register', formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       setStatus({ type: 'success', message: 'Student successfully registered into n8n pipeline.' });
+      
+      if (window.addLog) {
+        window.addLog('Register Student', 'success', `WhatsApp: Welcome message sent to ${formData.name}`);
+      }
+      
       setFormData({ name: '', phone: '', email: '' });
-      if (window.addLog) window.addLog('Register Student', 'Success');
     } catch (error) {
       console.error(error);
       setStatus({ type: 'error', message: error.response?.data?.error || 'Registration failed' });
-      if (window.addLog) window.addLog('Register Student', 'Error');
+      if (window.addLog) window.addLog('Register Student', 'error', error.response?.data?.error || 'Registration error');
     } finally {
       setLoading(false);
     }

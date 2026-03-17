@@ -21,17 +21,9 @@ function LoginPage() {
     setError('');
 
     try {
-      // Temporary bypass since DB is failing auth
-      // const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      
-      // MOCK LOGIN FOR DEMO (Since MongoDB is offline)
-      setTimeout(() => {
-        const mockUser = { id: 'user123', email, name: 'Demo Student' };
-        const mockToken = 'mock-jwt-token-123';
-        login(mockUser, mockToken);
-        navigate('/dashboard');
-      }, 800);
-
+      const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      login(res.data.user, res.data.token);
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Try again.');
       setLoading(false);

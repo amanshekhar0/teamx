@@ -14,17 +14,27 @@ function NoticeSummarizer() {
     setSummary(null);
 
     try {
-      // Mocking bypass
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setSummary({ 
-        message: "Notice summarized and broadcasted", 
-        data: ["Exam Dates announced", "Fees due by 15th", "Check portal"] 
+      const token = localStorage.getItem('token');
+      const res = await axios.post('http://localhost:5000/api/notice', { raw_text: text }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      if (window.addLog) window.addLog('Process Notice', 'Success');
+      
+      let summaryData = ['Check execution logs'];
+      if (res.data.summary) {
+        summaryData = Array.isArray(res.data.summary) ? res.data.summary : [res.data.summary];
+      }
+      setSummary({ 
+        message: res.data.message || "Notice summarized and broadcasted", 
+        data: summaryData 
+      });
+
+      if (window.addLog) {
+        window.addLog('Process Notice', 'success', summaryData.join('\n'));
+      }
       setText(''); 
     } catch (error) {
       console.error(error);
-      if (window.addLog) window.addLog('Process Notice', 'Error');
+      if (window.addLog) window.addLog('Process Notice', 'error', error.response?.data?.error || 'Summarization failed');
     } finally {
       setLoading(false);
     }

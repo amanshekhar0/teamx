@@ -11,15 +11,18 @@ function DeadlineModal({ onClose, onSuccess }) {
     e.preventDefault();
     setLoading(true);
     try {
-      // Temporary bypass since backend DB is failing auth
-      // await axios.post('http://localhost:5000/api/deadline', formData);
-      await new Promise(resolve => setTimeout(resolve, 800)); // fake delay
+      const token = localStorage.getItem('token');
+      const res = await axios.post('http://localhost:5000/api/deadline', formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
-      if (window.addLog) window.addLog('Add Deadline', 'Success');
+      if (window.addLog) {
+        window.addLog('Add Deadline', 'success', res.data.deadline.sent_message);
+      }
       onSuccess();
     } catch (error) {
       console.error(error);
-      if (window.addLog) window.addLog('Add Deadline', 'Error');
+      if (window.addLog) window.addLog('Add Deadline', 'error', error.response?.data?.error || 'Unknown error');
     } finally {
       setLoading(false);
     }

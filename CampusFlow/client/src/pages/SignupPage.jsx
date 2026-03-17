@@ -22,13 +22,9 @@ function SignupPage() {
     setError('');
 
     try {
-      // Mocking signup since DB is down
-      setTimeout(() => {
-        const mockUser = { id: 'user123', email, name };
-        const mockToken = 'mock-jwt-token-123';
-        login(mockUser, mockToken);
-        navigate('/dashboard');
-      }, 800);
+      const res = await axios.post('http://localhost:5000/api/auth/register', { name, email, password });
+      login(res.data.user, res.data.token);
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed. Try again.');
       setLoading(false);
